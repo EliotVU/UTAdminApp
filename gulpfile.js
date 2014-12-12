@@ -1,12 +1,7 @@
 var gulp = require('gulp');
-var sourcemaps = require('gulp-sourcemaps');
-var traceur = require('gulp-traceur');
 var transform = require('vinyl-transform');
-var source = require('vinyl-source-stream');
-var browserify = require('browserify');
 var es6ify = require('es6ify');
 var concat = require('gulp-concat');
-var path = require('path');
 
 gulp.task('watch', function(){
     gulp.watch(['src/app/index.html', 'src/app/index.js'], ['compile-index']);
@@ -33,18 +28,17 @@ gulp.task('compile-images', function(){
         .pipe(gulp.dest('dist/app/img/'));
 });
 
-gulp.task('compile-scripts', function(){
-    var compile = transform(function(filename) {
-        var bundler = browserify(filename, {
-            insertGlobals: true,
-            debug: true
-        });
-        bundler.transform(es6ify);
-        return bundler.bundle();
-    });
+var browserify = transform(function(filename) {
+    var browserify = require('browserify');
+    return browserify(filename, {debug: true})
+        .add(es6ify.runtime)
+        .transform(es6ify)
+        .bundle();
+});
 
+gulp.task('compile-scripts', function(){
     gulp.src(['src/app/script/**/*.js'])
-        .pipe(compile)
+        .pipe(browserify)
         .pipe(concat('app.js'))
         .pipe(gulp.dest('dist/app/script/'));
 });
